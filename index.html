@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slice Academy Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: atmosphericShift 20s ease infinite;
+            overflow: hidden;
+            height: 100vh;
+            cursor: none;
+        }
+        
+        @keyframes atmosphericShift {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+        }
+        
+        .ambient-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .ambient-particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.6), transparent);
+            border-radius: 50%;
+            animation: ambientFloat 15s infinite linear;
+        }
+        
+        @keyframes ambientFloat {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 1000;
+        }
+        
+        .score-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .score-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 4px;
+        }
+        
+        .score-label {
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .challenge-display {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 20px 32px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .challenge-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .challenge-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+        }
+        
+        .challenge-label {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+        
+        .stats-panel {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        .stat-item {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+            min-width: 80px;
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #10b981;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            font-weight: 500;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        
+        .game-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        
+        .target {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
+            user-select: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .target::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: targetPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes targetPulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+        
+        .target.correct {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+        
+        .target.incorrect {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+        
+        .target.critical {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            animation: criticalPulse 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes criticalPulse {
+            0% { transform: scale(1); box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4); }
+            100% { transform: scale(1.05); box-shadow: 0 12px 48px rgba(239, 68, 68, 0.6); }
+        }
+        
+        .target.sliced {
+            animation: targetDestroy 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        
+        @keyframes targetDestroy {
+            0% { 
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.3) rotate(90deg);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        .slice-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 500;
+        }
+        
+        .slice-line {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(96, 165, 250, 0.8) 20%, 
+                rgba(147, 197, 253, 1) 50%, 
+                rgba(96, 165, 250, 0.8) 80%, 
+                transparent 100%);
+            border-radius: 2px;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+            animation: sliceTrail 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        
+        @keyframes sliceTrail {
+            0% { 
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0px);
+            }
+            100% { 
+                opacity: 0;
+                transform: scale(1.5);
+                filter: blur(3px);
+            }
+        }
+        
+        .particle-explosion {
+            position: absolute;
+            pointer-events: none;
+            z-index: 600;
+        }
+        
+        .explosion-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: explode 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        
+        @keyframes explode {
+            0% {
+                opacity: 1;
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translate(var(--dx), var(--dy));
+            }
+        }
+        
+        .combo-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 48px;
+            color: white;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            pointer-events: none;
+            animation: comboAnimation 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        
+        @keyframes comboAnimation {
+            0% { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0) rotateY(90deg);
+            }
+            30% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2) rotateY(0deg);
+            }
+            70% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+            }
+            100% { 
+                opacity: 0;
+                transform: translate(-50%, -60%) scale(0.8) rotateY(-90deg);
+            }
+        }
+        
+        .screen-shake {
+            animation: screenShake 0.3s ease-in-out;
+        }
+        
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-2px, -1px); }
+            20% { transform: translate(2px, 1px); }
+            30% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            50% { transform: translate(-1px, 2px); }
+            60% { transform: translate(1px, -2px); }
+            70% { transform: translate(-1px, -1px); }
+            80% { transform: translate(1px, 1px); }
+            90% { transform: translate(-1px, 1px); }
+        }
+        
+        .cursor-trail {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.8), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+            animation: cursorFade 0.8s ease-out forwards;
+        }
+        
+        @keyframes cursorFade {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3); }
+        }
+        
+        .power-up {
+            position: absolute;
+            bottom: 32px;
+            right: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 1000;
+        }
+        
+        .power-button {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 16px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .power-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+        
+        .power-button:active {
+            transform: translateY(0);
+        }
+        
+        .power-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .game-over-panel {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .game-over-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 32px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .game-over-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 32px;
+        }
+        
+        .game-over-button {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            margin: 0 8px;
+        }
+        
+        .game-over-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(96, 165, 250, 0.4);
+        }
+        
+        .difficulty-indicator {
+            position: absolute;
+            top: 50%;
+            left: 32px;
+            transform: translateY(-50%);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+            transform: rotate(-90deg);
+        }
+        
+        .progress-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 3;
+        }
+        
+        .progress-circle.active {
+            stroke: #60a5fa;
+            stroke-dasharray: 188.5;
+            stroke-dashoffset: 188.5;
+            animation: progressFill 2s ease-in-out forwards;
+        }
+        
+        @keyframes progressFill {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hud {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 16px;
+                align-items: center;
+            }
+            
+            .stats-panel {
+                gap: 12px;
+            }
+            
+            .challenge-text {
+                font-size: 20px;
+            }
+            
+            .power-up {
+                bottom: 20px;
+                right: 20px;
+                flex-direction: row;
+                gap: 12px;
+            }
+            
+            .power-button {
+                min-width: 100px;
+                padding: 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <div class="ambient-particles" id="ambientParticles"></div>
+        
+        <div class="hud">
+            <div class="score-panel">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="scoreValue">0</div>
+            </div>
+            
+            <div class="challenge-display">
+                <div class="challenge-label">Current Challenge</div>
+                <div class="challenge-text" id="challengeText">2 × 3 = ?</div>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <div class="stat-value" id="accuracyValue">100%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="comboValue">0</div>
+                    <div class="stat-label">Combo</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="levelValue">1</div>
+                    <div class="stat-label">Level</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="difficulty-indicator" id="difficultyIndicator">
+            APPRENTICE
+        </div>
+        
+        <div class="game-field" id="gameField"></div>
+        
+        <div class="slice-effect" id="sliceEffect"></div>
+        <div class="particle-explosion" id="particleExplosion"></div>
+        
+        <div class="power-up">
+            <button class="power-button" id="slowTimeBtn" onclick="activateSlowTime()">
+                ⏱️ SLOW TIME
+            </button>
+            <button class="power-button" id="precisionBtn" onclick="activatePrecision()">
+                🎯 PRECISION
+            </button>
+        </div>
+        
+        <div class="game-over-overlay" id="gameOverOverlay">
+            <div class="game-over-panel">
+                <div class="game-over-title">Session Complete</div>
+                <div class="game-over-score" id="finalScore">Score: 0</div>
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 14px; opacity: 0.7; margin-bottom: 8px;">Accuracy</div>
+                    <div style="font-size: 18px; color: #10b981;" id="finalAccuracy">95%</div>
+                </div>
+                <button class="game-over-button" onclick="restartGame()">Play Again</button>
+                <button class="game-over-button" onclick="nextLevel()">Next Level</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class SliceAcademyPro {
+            constructor() {
+                this.gameState = {
+                    score: 0,
+                    accuracy: 100,
+                    combo: 0,
+                    level: 1,
+                    totalShots: 0,
+                    hits: 0,
+                    isPlaying: true,
+                    difficulty: 'apprentice',
+                    sessionTime: 0,
+                    powerUps: {
+                        slowTime: 3,
+                        precision: 3
+                    }
+                };
+                
+                this.currentChallenge = null;
+                this.targets = [];
+                this.mousePos = { x: 0, y: 0 };
+                this.isSlicing = false;
+                this.sliceStart = { x: 0, y: 0 };
+                this.spawnTimer = null;
+                this.gameTimer = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.createAmbientParticles();
+                this.generateChallenge();
+                this.startGameLoop();
+                this.updateUI();
+            }
+            
+            setupEventListeners() {
+                const gameField = document.getElementById('gameField');
+                
+                // Mouse events
+                gameField.addEventListener('mousedown', (e) => this.startSlice(e));
+                gameField.addEventListener('mousemove', (e) => this.handleSlice(e));
+                gameField.addEventListener('mouseup', (e) => this.endSlice(e));
+                
+                // Touch events
+                gameField.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.updateMousePos(touch.clientX, touch.clientY);
+                    this.startSlice(e);
+                });
+                
+                gameField.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.updateMousePos(touch.clientX, touch.clientY);
+                    this.handleSlice(e);
+                });
+                
+                gameField.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.endSlice(e);
+                });
+                
+                // Mouse tracking
+                document.addEventListener('mousemove', (e) => {
+                    this.updateMousePos(e.clientX, e.clientY);
+                    this.createCursorTrail(e.clientX, e.clientY);
+                });
+            }
+            
+            updateMousePos(x, y) {
+                this.mousePos.x = x;
+                this.mousePos.y = y;
+            }
+            
+            createCursorTrail(x, y) {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = (x - 12) + 'px';
+                trail.style.top = (y - 12) + 'px';
+                document.body.appendChild(trail);
+                
+                setTimeout(() => trail.remove(), 800);
+            }
+            
+            createAmbientParticles() {
+                const container = document.getElementById('ambientParticles');
+                
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'ambient-particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.width = (Math.random() * 4 + 2) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = Math.random() * 15 + 's';
+                    particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                    container.appendChild(particle);
+                }
+            }
+            
+            generateChallenge() {
+                const challengeTypes = ['multiplication', 'time'];
+                const type = challengeTypes[Math.floor(Math.random() * challengeTypes.length)];
+                
+                if (type === 'multiplication') {
+                    const a = Math.floor(Math.random() * (5 + this.gameState.level)) + 2;
+                    const b = Math.floor(Math.random() * (5 + this.gameState.level)) + 2;
+                    this.currentChallenge = {
+                        type: 'multiplication',
+                        question: `${a} × ${b} = ?`,
+                        answer: a * b
+                    };
+                } else {
+                    const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                    const minutes = [0, 15, 30, 45];
+                    const hour = hours[Math.floor(Math.random() * hours.length)];
+                    const minute = minutes[Math.floor(Math.random() * minutes.length)];
+                    this.currentChallenge = {
+                        type: 'time',
+                        question: 'What time?',
+                        answer: `${hour}:${minute.toString().padStart(2, '0')}`,
+                        hour: hour,
+                        minute: minute
+                    };
+                }
+                
+                document.getElementById('challengeText').textContent = this.currentChallenge.question;
+            }
+            
+            spawnTarget() {
+                if (!this.gameState.isPlaying) return;
+                
+                const target = document.createElement('div');
+                target.className = 'target';
+                
+                // Random position
+                const size = 80 + Math.random() * 40;
+                const x = Math.random() * (window.innerWidth - size);
+                const y = Math.random() * (window.innerHeight - 200) + 100;
+                
+                target.style.width = size + 'px';
+                target.style.height = size + 'px';
+                target.style.left = x + 'px';
+                target.style.top = y + 'px';
+                target.style.fontSize = (size * 0.25) + 'px';
+                
+                // Generate value
+                let value;
+                const isCorrect = Math.random() < 0.3; // 30% chance of correct answer
+                
+                if (this.currentChallenge.type === 'multiplication') {
+                    if (isCorrect) {
+                        value = this.currentChallenge.answer;
+                        target.classList.add('correct');
+                    } else {
+                        value = Math.floor(Math.random() * 50) + 1;
+                        while (value === this.currentChallenge.answer) {
+                            value = Math.floor(Math.random() * 50) + 1;
+                        }
+                        target.classList.add('incorrect');
+                    }
+                    target.textContent = value;
+                } else {
+                    // Time challenge
+                    if (isCorrect) {
+                        value = this.currentChallenge.answer;
+                        target.classList.add('correct');
+                    } else {
+                        const randomHours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                        const randomMinutes = [0, 15, 30, 45];
+                        const h = randomHours[Math.floor(Math.random() * randomHours.length)];
+                        const m = randomMinutes[Math.floor(Math.random() * randomMinutes.length)];
+                        value = `${h}:${m.toString().padStart(2, '0')}`;
+                        while (value === this.currentChallenge.answer) {
+                            const h2 = randomHours[Math.floor(Math.random() * randomHours.length)];
+                            const m2 = randomMinutes[Math.floor(Math.random() * randomMinutes.length)];
+                            value = `${h2}:${m2.toString().padStart(2, '0')}`;
+                        }
+                        target.classList.add('incorrect');
+                    }
+                    target.textContent = value;
+                }
+                
+                // Add critical targets occasionally
+                if (Math.random() < 0.1) {
+                    target.classList.add('critical');
+                }
+                
+                target.dataset.value = value;
+                target.dataset.isCorrect = isCorrect;
+                
+                document.getElementById('gameField').appendChild(target);
+                
+                const targetData = {
+                    element: target,
+                    x: x,
+                    y: y,
+                    value: value,
+                    isCorrect: isCorrect,
+                    lifespan: 5000 + Math.random() * 3000,
+                    created: Date.now()
+                };
+                
+                this.targets.push(targetData);
+                
+                // Auto-remove after lifespan
+                setTimeout(() => {
+                    if (this.targets.includes(targetData)) {
+                        this.removeTarget(targetData);
+                    }
+                }, targetData.lifespan);
+            }
+            
+            removeTarget(targetData) {
+                const index = this.targets.indexOf(targetData);
+                if (index > -1) {
+                    this.targets.splice(index, 1);
+                    if (targetData.element.parentNode) {
+                        targetData.element.remove();
+                    }
+                }
+            }
+            
+            startSlice(e) {
+                this.isSlicing = true;
+                this.sliceStart.x = this.mousePos.x;
+                this.sliceStart.y = this.mousePos.y;
+            }
+            
+            handleSlice(e) {
+                if (!this.isSlicing || !this.gameState.isPlaying) return;
+                
+                this.createSliceTrail(this.sliceStart.x, this.sliceStart.y, this.mousePos.x, this.mousePos.y);
+                this.checkTargetHit(this.mousePos.x, this.mousePos.y);
+                
+                this.sliceStart.x = this.mousePos.x;
+                this.sliceStart.y = this.mousePos.y;
+            }
+            
+            endSlice(e) {
+                this.isSlicing = false;
+            }
+            
+            createSliceTrail(x1, y1, x2, y2) {
+                const trail = document.createElement('div');
+                trail.className = 'slice-line';
+                
+                const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                
+                trail.style.width = length + 'px';
+                trail.style.left = x1 + 'px';
+                trail.style.top = y1 + 'px';
+                trail.style.transform = `rotate(${angle}deg)`;
+                
+                document.getElementById('sliceEffect').appendChild(trail);
+                
+                setTimeout(() => trail.remove(), 600);
+            }
+            
+            checkTargetHit(x, y) {
+                this.targets.forEach((target, index) => {
+                    const rect = target.element.getBoundingClientRect();
+                    
+                    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                        this.hitTarget(target, index);
+                    }
+                });
+            }
+            
+            hitTarget(target, index) {
+                if (target.hit) return;
+                target.hit = true;
+                
+                this.gameState.totalShots++;
+                
+                if (target.isCorrect) {
+                    this.gameState.hits++;
+                    this.gameState.combo++;
+                    
+                    let points = 100;
+                    if (target.element.classList.contains('critical')) {
+                        points = 500;
+                    }
+                    points += this.gameState.combo * 25;
+                    
+                    this.gameState.score += points;
+                    
+                    this.createExplosion(target.x + 40, target.y + 40, '#10b981');
+                    
+                    if (this.gameState.combo >= 3) {
+                        this.showCombo();
+                    }
+                    
+                    this.generateChallenge();
+                } else {
+                    this.gameState.combo = 0;
+                    this.createExplosion(target.x + 40, target.y + 40, '#ef4444');
+                    this.screenShake();
+                }
+                
+                target.element.classList.add('sliced');
+                
+                setTimeout(() => {
+                    this.removeTarget(target);
+                }, 400);
+                
+                this.updateUI();
+            }
+            
+            createExplosion(x, y, color) {
+                const explosion = document.getElementById('particleExplosion');
+                
+                for (let i = 0; i < 12; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'explosion-particle';
+                    particle.style.background = color;
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    
+                    const angle = (i / 12) * Math.PI * 2;
+                    const distance = 60 + Math.random() * 40;
+                    const dx = Math.cos(angle) * distance;
+                    const dy = Math.sin(angle) * distance;
+                    
+                    particle.style.setProperty('--dx', dx + 'px');
+                    particle.style.setProperty('--dy', dy + 'px');
+                    
+                    explosion.appendChild(particle);
+                    
+                    setTimeout(() => particle.remove(), 1200);
+                }
+            }
+            
+            showCombo() {
+                const combo = document.createElement('div');
+                combo.className = 'combo-display';
+                combo.textContent = `${this.gameState.combo}x COMBO!`;
+                document.body.appendChild(combo);
+                
+                setTimeout(() => combo.remove(), 1500);
+            }
+            
+            screenShake() {
+                document.getElementById('gameContainer').classList.add('screen-shake');
+                setTimeout(() => {
+                    document.getElementById('gameContainer').classList.remove('screen-shake');
+                }, 300);
+            }
+            
+            updateUI() {
+                document.getElementById('scoreValue').textContent = this.gameState.score.toLocaleString();
+                document.getElementById('comboValue').textContent = this.gameState.combo;
+                document.getElementById('levelValue').textContent = this.gameState.level;
+                
+                if (this.gameState.totalShots > 0) {
+                    this.gameState.accuracy = Math.round((this.gameState.hits / this.gameState.totalShots) * 100);
+                }
+                document.getElementById('accuracyValue').textContent = this.gameState.accuracy + '%';
+                
+                // Level progression
+                const scoreThresholds = [1000, 2500, 5000, 10000, 20000];
+                for (let i = 0; i < scoreThresholds.length; i++) {
+                    if (this.gameState.score >= scoreThresholds[i] && this.gameState.level === i + 1) {
+                        this.levelUp();
+                        break;
+                    }
+                }
+            }
+            
+            levelUp() {
+                this.gameState.level++;
+                
+                const difficulties = ['APPRENTICE', 'SKILLED', 'EXPERT', 'MASTER', 'LEGEND'];
+                if (this.gameState.level <= difficulties.length) {
+                    document.getElementById('difficultyIndicator').textContent = difficulties[this.gameState.level - 1];
+                }
+                
+                this.showCombo(); // Reuse combo animation for level up
+            }
+            
+            startGameLoop() {
+                // Spawn targets
+                this.spawnTimer = setInterval(() => {
+                    if (this.gameState.isPlaying) {
+                        this.spawnTarget();
+                    }
+                }, Math.max(800 - this.gameState.level * 50, 400));
+                
+                // Game session timer (5 minutes)
+                this.gameTimer = setTimeout(() => {
+                    this.endGame();
+                }, 300000); // 5 minutes
+            }
+            
+            endGame() {
+                this.gameState.isPlaying = false;
+                clearInterval(this.spawnTimer);
+                clearTimeout(this.gameTimer);
+                
+                document.getElementById('finalScore').textContent = `Score: ${this.gameState.score.toLocaleString()}`;
+                document.getElementById('finalAccuracy').textContent = this.gameState.accuracy + '%';
+                document.getElementById('gameOverOverlay').style.display = 'flex';
+            }
+            
+            activateSlowTime() {
+                if (this.gameState.powerUps.slowTime > 0) {
+                    this.gameState.powerUps.slowTime--;
+                    // Implement slow time effect
+                    document.getElementById('slowTimeBtn').textContent = `⏱️ SLOW TIME (${this.gameState.powerUps.slowTime})`;
+                    if (this.gameState.powerUps.slowTime === 0) {
+                        document.getElementById('slowTimeBtn').classList.add('disabled');
+                    }
+                }
+            }
+            
+            activatePrecision() {
+                if (this.gameState.powerUps.precision > 0) {
+                    this.gameState.powerUps.precision--;
+                    // Implement precision effect
+                    document.getElementById('precisionBtn').textContent = `🎯 PRECISION (${this.gameState.powerUps.precision})`;
+                    if (this.gameState.powerUps.precision === 0) {
+                        document.getElementById('precisionBtn').classList.add('disabled');
+                    }
+                }
+            }
+        }
+        
+        let game;
+        
+        function startGame() {
+            game = new SliceAcademyPro();
+        }
+        
+        function restartGame() {
+            document.getElementById('gameOverOverlay').style.display = 'none';
+            document.getElementById('gameField').innerHTML = '';
+            startGame();
+        }
+        
+        function nextLevel() {
+            restartGame();
+        }
+        
+        function activateSlowTime() {
+            if (game) game.activateSlowTime();
+        }
+        
+        function activatePrecision() {
+            if (game) game.activatePrecision();
+        }
+        
+        // Start the game
+        startGame();
+    </script>
+</body>
+</html>
